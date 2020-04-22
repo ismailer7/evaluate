@@ -10,10 +10,13 @@ import java.util.regex.Pattern;
 
 public class AutomataExpressionValidate {
 
-	// static String[] states = new String[] {"q0", "q1", "q2", "q3", "q4"};
 	static List<String> states = Arrays.asList("q0", "q1", "q2", "q3", "q4");
-	// String[] transitions = new String[] {"+", "-", "*", "/", ")", "(", "digit"};
 	static Map<String, Integer> transition = new HashMap<String, Integer>() {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		{
 			put("+", 0);
 			put("-", 1);
@@ -24,11 +27,15 @@ public class AutomataExpressionValidate {
 			put("digit", 6);
 		}
 	};
-	static List<Integer> finiteStates = Arrays.asList(1, 3);
-
+	static List<Integer> finiteStates = Arrays.asList(1, 3); // expected finite state in case we have valid expression is q1 or q3
+	
 	static String[][] automata = { { "", "", "", "", "", "q2", "q1" }, { "q2", "q2", "q2", "q2", "q3", "", "q1" },
 			{ "q1", "q1", "q1", "q1", "", "q2", "q1" }, { "q0", "q0", "q0", "q0", "q3", "", "" } };
 
+	/**
+	 * TODO  - add the Error tracking to inform user/ help him recognize where the expression goes wrong
+	 */
+	
 	public static boolean validateExpression(String expression) {
 		// 1- check parentheses validation
 		// -> extract the parentheses
@@ -67,26 +74,36 @@ public class AutomataExpressionValidate {
 	}
 
 	public static boolean isValideParentheses(String parentheses) {
-		if (parentheses.startsWith(")")) {
+		try {
+			if (parentheses.startsWith(")")) {
+				throw new ExpressionException(String.format("Invalid Expression \"%s\" -> start with an enclosing parenthese", parentheses));
+			}
+			Stack<Character> myStack = new Stack<Character>();
+			int init = 0;
+			int errorTrack = 0;
+			while (init < parentheses.length()) {
+				if (myStack.isEmpty()) {
+					myStack.push(parentheses.charAt(init));
+					errorTrack ++;
+				} else {
+					// get the element at the top
+					char top = myStack.peek();
+					if (top == '(' && parentheses.charAt(init) == ')') {
+						myStack.pop();
+						errorTrack --;
+					} else {
+						myStack.push(parentheses.charAt(init));
+						errorTrack ++;
+					}
+				}
+				init++;
+			}
+			if(!myStack.isEmpty()) throw new ExpressionException(String.format("Invalid Expression \"%s\" -> Parentheses combination no closing parenthese for \"%s\" at position [%d] ",parentheses, parentheses.charAt(errorTrack), errorTrack));
+		} catch(RuntimeException e) {
+			System.out.println(e.getMessage());
 			return false;
 		}
-		Stack<Character> myStack = new Stack<Character>();
-		int init = 0;
-		while (init < parentheses.length()) {
-			if (myStack.isEmpty()) {
-				myStack.push(parentheses.charAt(init));
-			} else {
-				// get the element at the top
-				char top = myStack.peek();
-				if (top == '(' && parentheses.charAt(init) == ')') {
-					myStack.pop();
-				} else {
-					myStack.push(parentheses.charAt(init));
-				}
-			}
-			init++;
-		}
-		return myStack.isEmpty() ? true : false;
+		return true;
 	}
 
 	public static String extractParentheses(String expression) {
